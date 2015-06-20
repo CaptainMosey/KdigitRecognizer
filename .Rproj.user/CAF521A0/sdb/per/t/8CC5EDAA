@@ -1,0 +1,22 @@
+{
+    "contents" : "",
+    "created" : 1434787026323.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "8CC5EDAA",
+    "lastKnownWriteTime" : 80,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "caption" : "trainSet",
+        "contentUrl" : "content?title=trainSet&file=7f0de460208a4ce089b39757e2144b6f.htm",
+        "displayedObservations" : "672",
+        "displayedVariables" : 21,
+        "totalObservations" : "672",
+        "variables" : "21"
+    },
+    "source_on_save" : false,
+    "type" : "r_dataframe"
+}
