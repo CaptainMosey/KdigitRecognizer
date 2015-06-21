@@ -2,18 +2,23 @@
 
 
 library(caret)
+library(data.table)
 set.seed(1492)
 
-inTrain<-createDataPartition(train$label,p=0.05,list=F)
+train<-read.csv("train.csv")
+test<-read.csv("test.csv")
+
+
+inTrain<-createDataPartition(train$label,p=0.0025,list=F)
 
 training<-train[inTrain,]
 
 testingAndValidation<-train[-inTrain,]
 print("part 1")
-inTest<-createDataPartition(testingAndValidation$label,p=.025,list=F)
+inTest<-createDataPartition(testingAndValidation$label,p=0.025,list=F)
 testing<-testingAndValidation[inTest,]
 validation<-testingAndValidation[-inTest,]
-print("part2")
+print(paste("part2 ",Sys.time())
 
 #RFmodel=train(label~.,training,method="rf")
 #print("model done")
@@ -30,15 +35,19 @@ lowCutoff=50#for considering empty
 process1<-function(dataSet=training){
   ans=data.frame(matrix(nrow=0,ncol=20))
   colnames(ans)=names
-
+  #newMatrix<-matrix(dataSet[i,2:785],nrow=28,ncol=28,byrow=T)
   max=0
   for (i in 1:nrow(dataSet)){
-    if (i%%100==0)print(paste("row number ",toString(i)," of dataSet"))
+    
+    if (i%%100==0){
+      print(paste("row number ",toString(i)," of dataSet",Sys.time()))
+    }
     
     #make matrix 28x28
     newMatrix<-matrix(dataSet[i,2:785],nrow=28,ncol=28,byrow=T)
     
     for(j in 1:28){
+      nextLine=data.frame(matrix(nrow=0,ncol=20))
       numZero=0
       numBlur=0
       numFull=0
@@ -94,14 +103,17 @@ process1<-function(dataSet=training){
       #,newdataframe<-rbind(newdataframe,vector
       if (length(sumVector)>max) max=length(sumVector)
       
-      for(n in length(sumVector):18){
+      for(n in length(sumVector):17){
         sumVector<-append(sumVector,0)
         
         
       }
       #print(sumVector)
-      ans<-rbind(ans,c(dataSet[i,1],j,sumVector))
+      #ans<-rbind(ans,c(dataSet[i,1],j,sumVector))
+      nextLine<-rbind(nextLine,c(dataSet[i,1],j,sumVector))
+
       
+      ans<-rbindlist(list(ans,nextLine),use.names=F)
       
     }
     
@@ -115,8 +127,9 @@ process1<-function(dataSet=training){
 
 trainProData<-function(dataSet=trainSet){
   #colnames(trainSet)=names
+  print("deriving model")
   rfMod<-train(X1~.,data=dataSet,method="rf")
-  print("fit model 1")
+  print("model ready")
   return(rfMod)
 }
 
@@ -135,7 +148,9 @@ fitProData<-function(rfMod,testSet=testing){
 trainSet<-process1()
 trainSet$X1<-as.factor(trainSet$X1)
 rfMod<-trainProData(trainSet)
+print("processing test partition")
 testSet=process1(testing)
+print("fitting test partition data")
 testSet<-fitProData(rfMod,testSet)
 
 
