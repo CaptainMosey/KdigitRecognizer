@@ -197,6 +197,8 @@ testFit<-fitProData(rfMod,testSet)
 #competeProSet=process1(test,isTest=TRUE)
 competeFit<-fitProData(rfMod,competeProSet)
 
+write.csv(competeFit,paste("sub",Sys.time(),".csv",sep=""))
+gbmFit<-fitProData(gbmMod,testSet)
 
 
 #only dif from process1 is the lack of a label in columm 1
