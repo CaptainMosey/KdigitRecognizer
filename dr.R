@@ -3,13 +3,14 @@
 
 library(caret)
 library(data.table)
+library(randomForest)
 set.seed(1492)
 
 train<-read.csv("train.csv")
 test<-read.csv("test.csv")
 
 
-inTrain<-createDataPartition(train$label,p=0.0025,list=F)
+inTrain<-createDataPartition(train$label,p=0.025,list=F)
 
 training<-train[inTrain,]
 
@@ -18,13 +19,17 @@ print("part 1")
 inTest<-createDataPartition(testingAndValidation$label,p=0.025,list=F)
 testing<-testingAndValidation[inTest,]
 validation<-testingAndValidation[-inTest,]
-print(paste("part2 ",Sys.time())
+print(paste("part2 ",Sys.time()))
 
 #RFmodel=train(label~.,training,method="rf")
 #print("model done")
 #RfFit<-predict(RFmodel,testing)
 
-names=c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12","X13","X14","X15","X16","X17","X18","X19","X20")
+#names=c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12","X13","X14","X15","X16","X17","X18","X19","X20")
+#names=c("X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11","X12","X13","X14","X15","X16","X17","X18","X19","X20")
+
+
+
 #picture is 28x28
 #find contiguous pixels
 cutoff=220#for considering full
@@ -33,8 +38,8 @@ lowCutoff=50#for considering empty
 
 #looks for boundaries of dark, light and inbetween
 process1<-function(dataSet=training){
-  ans=data.frame(matrix(nrow=0,ncol=20))
-  colnames(ans)=names
+  ans=data.frame(matrix(nrow=0,ncol=477))
+  #colnames(ans)=names
   #newMatrix<-matrix(dataSet[i,2:785],nrow=28,ncol=28,byrow=T)
   max=0
   for (i in 1:nrow(dataSet)){
@@ -45,9 +50,9 @@ process1<-function(dataSet=training){
     
     #make matrix 28x28
     newMatrix<-matrix(dataSet[i,2:785],nrow=28,ncol=28,byrow=T)
-    
-    for(j in 1:28){
-      nextLine=data.frame(matrix(nrow=0,ncol=20))
+    nextLine=data.frame(matrix(nrow=1,ncol=1))
+      for(j in 1:28){
+      #nextLine=data.frame(matrix(nrow=0,ncol=20))
       numZero=0
       numBlur=0
       numFull=0
@@ -110,24 +115,25 @@ process1<-function(dataSet=training){
       }
       #print(sumVector)
       #ans<-rbind(ans,c(dataSet[i,1],j,sumVector))
-      nextLine<-rbind(nextLine,c(dataSet[i,1],j,sumVector))
-
       
-      ans<-rbindlist(list(ans,nextLine),use.names=F)
+      nextLine[(1+(j-1)*17):((j*17))]<-sumVector[1:17]
+      #nextLine<-cbind(nextLine,sumVector)
+
+      #ans<-rbindlist(list(ans,nextLine),use.names=F)
       
     }
     
-    
+    ans<-rbindlist(list(ans,c(dataSet[i,1],nextLine)),use.names=F)
     
     #print(max)
   }
-  colnames(ans)=names
+  #colnames(ans)=names
   return(ans)
 }
 
 trainProData<-function(dataSet=trainSet){
   #colnames(trainSet)=names
-  print("deriving model")
+  print("generate random forest")
   rfMod<-train(X1~.,data=dataSet,method="rf")
   print("model ready")
   return(rfMod)
@@ -140,6 +146,8 @@ fitProData<-function(rfMod,testSet=testing){
   print("applied model 1")
   testSet$predRight<-rfTest==testSet$X1
   print(table(rfTest,testSet$X1))
+  print(paste(toString(sum(testSet$predRight))," of ",toString(nrow(testSet))))
+  print((paste(toString(100*sum(testSet$predRight)/(nrow(testSet))),"%")))
   return(testSet)
 }
 
