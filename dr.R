@@ -1,24 +1,32 @@
 library(caret)
 library(data.table)
 library(randomForest)
+library(e1071)
+library(mgcv)
+library(tree)
 set.seed(1492)
 
 train<-read.csv("train.csv")
 test<-read.csv("test.csv")
 
 #dataset is 40,000 , so 0.025 is ~1000 samples
-inTrain<-createDataPartition(train$label,p=0.1875,list=F)
+inTrain<-createDataPartition(train$label,p=0.5,list=F)
 
 training<-train[inTrain,]
 
 testingAndValidation<-train[-inTrain,]
 print("part 1")
-inTest<-createDataPartition(testingAndValidation$label,p=0.1875,list=F)
+inTest<-createDataPartition(testingAndValidation$label,p=0.5,list=F)
 testing<-testingAndValidation[inTest,]
 validation<-testingAndValidation[-inTest,]
 print(paste("part2 ",Sys.time()))
 
 
+
+
+
+#comboset, labels, 2000rf, 7500rf, 2000gbm, 2000svm
+#use"gam" as method
 
 
 #picture is 28x28
@@ -147,7 +155,15 @@ trainProDataGBM<-function(dataSet=trainSet){
   return(gbmMod)
 }
 
-
+trainProDataSVM<-function(dataSet=trainSet){
+  
+  print("generate svm")
+  svmMod<-train(X1~.,data=dataSet,method="svm")
+  
+  
+  print("model ready")
+  return(svmMod)
+}
 fitProData<-function(rfMod,testSet=testing){  
   
 
@@ -198,100 +214,12 @@ testFit<-fitProData(rfMod,testSet)
 competeFit<-fitProData(rfMod,competeProSet)
 
 write.csv(competeFit,paste("sub",Sys.time(),".csv",sep=""))
+print(Sys.time())
+gbmMod<-train(.outcome~.,data=trainSet,method="gbm")
+print(Sys.time())
 gbmFit<-fitProData(gbmMod,testSet)
+print(Sys.time())
+svmMod<-best.svm(.outcome~.,data=trainSet)
+print(Sys.time())
 
 
-#only dif from process1 is the lack of a label in columm 1
-processTest<-function(dataSet=training){
-  ans=data.frame(matrix(nrow=0,ncol=477))
-  #colnames(ans)=names
-
-  max=0
-  for (i in 1:nrow(dataSet)){
-  #for (i in 1:5000) {
-    if (i%%100==0){
-      print(paste("row number ",toString(i)," of dataSet",Sys.time()))
-    }
-    
-    #make matrix 28x28
-    newMatrix<-matrix(dataSet[i,1:784],nrow=28,ncol=28,byrow=T)
-    nextLine=data.frame(matrix(nrow=1,ncol=1))
-    for(j in 1:28){
-      #nextLine=data.frame(matrix(nrow=0,ncol=20))
-      numZero=0
-      numBlur=0
-      numFull=0
-      inZero=1
-      inBlur=0
-      inFull=0
-      sumVector=vector(length=0)
-      #scan matrix for adjacent values
-      for(k in 1:28){
-        a=newMatrix[j,k]
-        if(inZero){
-          if(a<lowCutoff) numZero=numZero+1
-          else {
-            inZero=0
-            inBlur=1
-            sumVector=append(sumVector,numZero)
-            numZero=0
-            numBlur=1
-          }}
-        else if (inBlur){
-          if (a>lowCutoff & a<cutoff) numBlur=numBlur+1
-          else if (a<lowCutoff){
-            inZero=1
-            inBlur=0
-            sumVector=append(sumVector,numBlur)
-            numBlur=0
-            numZero=1
-          } else{#a is full
-            
-            inFull=1
-            inBlur=0
-            sumVector=append(sumVector,numBlur)
-            numBlur=0
-            numFull=1                    
-          }}
-        else{
-          if(a>cutoff) numFull=numFull+1
-          else{
-            inFull=0
-            inBlur=1
-            sumVector=append(sumVector,numFull)
-            numFull=0
-            numBlur=1
-            
-          }
-        }      
-        
-        
-        
-      }
-      #make vector same length
-      #pattern always zero,blur,full,blur,zero...
-      #,newdataframe<-rbind(newdataframe,vector
-      if (length(sumVector)>max) max=length(sumVector)
-      
-      for(n in length(sumVector):17){
-        sumVector<-append(sumVector,0)
-        
-        
-      }
-      #print(sumVector)
-      #ans<-rbind(ans,c(dataSet[i,1],j,sumVector))
-      
-      nextLine[(1+(j-1)*17):((j*17))]<-sumVector[1:17]
-      #nextLine<-cbind(nextLine,sumVector)
-      
-      #ans<-rbindlist(list(ans,nextLine),use.names=F)
-      
-    }
-    
-    ans<-rbindlist(list(ans,c(0,nextLine)),use.names=F)
-    
-    #print(max)
-  }
-  #colnames(ans)=names
-  return(ans)
-}

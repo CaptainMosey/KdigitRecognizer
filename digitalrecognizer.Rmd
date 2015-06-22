@@ -18,7 +18,9 @@ Load libraries:  caret, data.table, randomForest (not shown)
 library(caret)
 library(data.table)
 library(randomForest)
-
+library(e1071)
+library(mgcv)
+library(tree)
 ```
 
 General Setup
@@ -33,7 +35,7 @@ set.seed(1492)
 train<-read.csv("train.csv")
 test<-read.csv("test.csv")
 
-
+#partition of 42,000 samples
 inTrain<-createDataPartition(train$label,p=0.05,list=F)
 
 training<-train[inTrain,]
@@ -51,7 +53,7 @@ print(paste("part2 ",Sys.time()))
 
 ```
 
-Process Train, Validate, testsamples
+Process Train, Validate, testsamples function
 
 ```{r,echo=TRUE,cache=TRUE}
 
@@ -63,6 +65,9 @@ lowCutoff=50#for considering empty
 
 #looks for boundaries of dark, light and inbetween
 process1<-function(dataSet=training,isTest=FALSE){
+  
+  #if we are looking at the competitionm sample, there is no "label" column in the data
+  
   if(isTest==FALSE) colAdd=1
   else colAdd=0
   ans=data.frame(matrix(nrow=0,ncol=477))
