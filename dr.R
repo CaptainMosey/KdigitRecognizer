@@ -10,7 +10,7 @@ train<-read.csv("train.csv")
 test<-read.csv("test.csv")
 
 #dataset is 40,000 , so 0.025 is ~1000 samples
-inTrain<-createDataPartition(train$label,p=0.5,list=F)
+inTrain<-createDataPartition(train$label,p=0.05,list=F)
 
 training<-train[inTrain,]
 
@@ -60,7 +60,8 @@ process1<-function(dataSet=training,isTest=FALSE){
       numBlur=0
       numFull=0
       inZero=1
-      inBlur=0
+      inBlurUp=0
+      inBlurDown=0
       inFull=0
       sumVector=vector(length=0)
       #scan matrix for adjacent values
@@ -70,32 +71,34 @@ process1<-function(dataSet=training,isTest=FALSE){
           if(a<lowCutoff) numZero=numZero+1
           else {
             inZero=0
-            inBlur=1
+            inBlurUp=1
             sumVector=append(sumVector,numZero)
             numZero=0
             numBlur=1
           }}
-        else if (inBlur){
+        else if (inBlurUp){
           if (a>lowCutoff & a<cutoff) numBlur=numBlur+1
-          else if (a<lowCutoff){
+          else {
+            inFull=1
+            inBlurUp=0
+            sumVector=append(sumVector,numBlur)
+            numBlur=0
+            numFull=1
+          } }
+        else if (inBlurDown){
+          if (a>lowCutoff & a<cutoff) numBlur=numBlur+1
+          else {
             inZero=1
-            inBlur=0
+            inBlurDown=0
             sumVector=append(sumVector,numBlur)
             numBlur=0
             numZero=1
-          } else{#a is full
-            
-            inFull=1
-            inBlur=0
-            sumVector=append(sumVector,numBlur)
-            numBlur=0
-            numFull=1                    
-          }}
+          } }
         else{
           if(a>cutoff) numFull=numFull+1
           else{
             inFull=0
-            inBlur=1
+            inBlurDown=1
             sumVector=append(sumVector,numFull)
             numFull=0
             numBlur=1
@@ -209,11 +212,11 @@ rfMod<-trainProData(trainSet)
 print("processing validation partition")
 testSet=process1(testing)
 print("fitting validation partition data")
-testFit<-fitProData(rfMod,testSet)
+testRFFit<-fitProData(rfMod,testSet)
 #competeProSet=process1(test,isTest=TRUE)
-competeFit<-fitProData(rfMod,competeProSet)
+#competeFit<-fitProData(rfMod,competeProSet)
 
-write.csv(competeFit,paste("sub",Sys.time(),".csv",sep=""))
+#write.csv(competeFit,paste("sub",Sys.time(),".csv",sep=""))
 print(Sys.time())
 gbmMod<-train(.outcome~.,data=trainSet,method="gbm")
 print(Sys.time())
@@ -221,5 +224,5 @@ gbmFit<-fitProData(gbmMod,testSet)
 print(Sys.time())
 svmMod<-best.svm(.outcome~.,data=trainSet)
 print(Sys.time())
-
+svmFit<-fitProData(svmMod,testSet)
 

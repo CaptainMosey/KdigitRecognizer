@@ -1,0 +1,13 @@
+base
+lattice
+ggplot2
+caret
+data.table
+randomForest
+e1071
+nlme
+mgcv
+tree
+survival
+gbm
+plyr
